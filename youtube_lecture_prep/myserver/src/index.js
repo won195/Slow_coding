@@ -3,10 +3,11 @@ const path = require('path')
 const hbs = require('hbs')
 
 const bodyParser = require('body-parser')
+const airdata = require('./utils/airdata')
 
 const app = express()
 app.use(bodyParser.urlencoded({extended: true}))
-const port = process
+const port = process.env.PORT || 5000
 
 // Heroku
 
@@ -20,7 +21,7 @@ hbs.registerPartials(partialsPath)
 
 app.use(express.static(publicDir))
 
-app.get('', (req, res) => {
+app.get('/', (req, res) => {
   res.render('index', {
     제목: '미세먼지 정보 앱',
     이름: '유지수',
@@ -35,7 +36,7 @@ app.get('/help', (req, res) => {
   })
 })
 app.get('/about', (req, res) => {
-  res.render('help', {
+  res.render('about', {
     제목: '미세먼지 정보 앱',
     이름: '도우미',
     이메일: 'about@hotmail.com'
@@ -43,14 +44,24 @@ app.get('/about', (req, res) => {
 })
 
 // JSON endpoint
-app.get('/air', (req, res) => {
-  res.send({
-    forecast: '현재는 쌀쌀합니다',
-    위치: "서울"
+app.post('/air', (req, res) => {
+  airdata(req.body.location, (error, {air}={}) => {
+    if (error) {
+      return res.send({error})
+    }
+    return res.render('air', {
+      제목: '미세먼지 정보',
+      이름: '유지수',
+      이메일: 'air@hotmail.com',
+      location: air['parm']['stationName'],
+      time: air['list'][0]['dataTime'],
+      pm10: air['list'][0]['pm10value'],
+      pm25: air['list'][0]['pm25value']
+    })
   })
 })
 
-app.listen(5000, () => {
-  console.log('Server is up and running at port 5000')
+app.listen(port, () => {
+  console.log(`Server is up and running at port ${port}`)
 }) // port number
 
